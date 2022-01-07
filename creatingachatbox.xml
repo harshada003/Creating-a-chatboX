@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="cd455737-b6c4-4134-bdfe-75c81f93aa99" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<flow name="creatingachatboxFlow" doc:id="a39b644d-9d85-41ae-a7b3-2dbec50cd945" >
+		<http:listener doc:name="Listener" doc:id="ab950c28-3494-4464-826a-e77b9f320b51" config-ref="HTTP_Listener_config" path="/slack " allowedMethods="POST"/>
+		<logger level="INFO" doc:name="Logger" doc:id="9f6d95f6-b224-4650-87a7-a7cd2e459e4c" message="#[Payload]"/>
+		<set-variable value="#[%dw 2.0 &#10;output application/json&#10;	---&#10;	payload.text]" doc:name="Text to Translet " doc:id="2389be13-e863-478c-92d5-246d0eedeb15" variableName="Text to Translet "/>
+		<http:request doc:name="Request" doc:id="ba516ba0-ba55-4880-9d56-3596c899216f" method="POST" url="http://creatingachatbox.us-e2.cloudhub.io">
+			<http:headers ><![CDATA[#[output application/java
+---
+{
+	"Ocp-Apim-Subcription-Key" : "Value"
+}]]]></http:headers>
+		</http:request>
+		<set-variable value="#[payload]" doc:name="Token" doc:id="f43e5068-708c-492a-b325-c3c3a4f7b0cb" variableName="Token"/>
+		<http:request method="POST" doc:name="Request" doc:id="584bd0dd-4d51-4421-b131-ad6bbf814758" url="http://creatingachatbox.us-e2.cloudhub.io">
+			<http:body ><![CDATA[#[%dw 2.0
+output application/json
+---
+[{
+    "Text": vars.textToTranslate
+}]]]]></http:body>
+		</http:request>
+		<ee:transform doc:name="Transform Message" doc:id="7bb357c1-b762-4a52-ac01-adede22dd059" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+payload.translations[0].text[0]]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="19bc818f-614a-43b9-83c9-9950b5142f16" />
+	</flow>
+</mule>
